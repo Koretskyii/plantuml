@@ -1,0 +1,440 @@
+@startuml
+title UML Class Diagram — Civic Digital Ecosystem (Full Version, Readable Fields)
+
+skinparam classAttributeIconSize 0
+
+' ================= ENUMS =================
+package "Enums" {
+  enum UserRole {
+    Citizen
+    Admin
+    Organizer
+    Municipality
+  }
+
+  enum RequestStatus {
+    New
+    InProgress
+    Completed
+  }
+
+  enum ProjectStatus {
+    Draft
+    Active
+    Finished
+  }
+
+  enum PaymentStatus {
+    Pending
+    Completed
+    Failed
+  }
+
+  enum ReactionType {
+    Like
+    Support
+    Dislike
+  }
+
+  enum AlertType {
+    Emergency
+    Info
+  }
+}
+
+' ================= OBSERVER =================
+package "Observer Pattern" {
+  interface Observer {
+    +update(event: DomainEvent): void
+  }
+
+  interface Subject {
+    +attach(o: Observer): void
+    +detach(o: Observer): void
+    +notifyObservers(event: DomainEvent): void
+  }
+
+  class DomainEvent {
+    +type: String
+    +payload: Object
+    +timestamp: DateTime
+  }
+
+  Subject ..> DomainEvent : creates
+  Observer ..> DomainEvent : receives
+}
+
+' ================= USERS =================
+class User {
+  +id: UUID
+  +name: String
+  +email: String
+  +role: UserRole
+  +passwordHash: String
+
+  +createRequest(description: String, location: String, attachments: List<MediaFile>): CityRequest
+  +createProject(title: String, description: String): Project
+  +sendMessage(chat: Chat, content: String): Message
+  +createPost(community: Community, content: String, mediaFiles: List<MediaFile>): Post
+  +react(post: Post, reactionType: ReactionType): void
+  +vote(option: SurveyOption): void
+  +donate(project: CrowdfundingProject, amount: Decimal): Donation
+  +joinCommunity(community: Community): void
+  +leaveCommunity(community: Community): void
+  +update(event: DomainEvent): void
+}
+User ..|> Observer
+
+' ================= MUNICIPALITY =================
+class Municipality {
+  +id: UUID
+  +name: String
+
+  +Report(report: Report): void
+  +respondToRequest(request: CityRequest, report: Report): void
+  +sendMessageResponse(chat: Chat, content: String): void
+  +publishAlert(alert: Alert): void
+  +publishNews(news: GeneralNews): void
+  +createSurvey(survey: Survey): void
+  +update(event: DomainEvent): void
+}
+Municipality ..|> Observer
+User --> Municipality : manages (if role == Municipality)
+
+' ================= SECURITY =================
+class SecurityService <<Singleton>> {
+  -instance: SecurityService
+
+  +getInstance(): SecurityService
+  +authenticate(email: String, password: String): Boolean
+  +login(email: String, password: String): String
+  +logout(user: User): void
+
+  +authenticate(email: String, password: String): Boolean
+  +authorize(user: User, action: String): Boolean
+  +hasRole(user: User, role: UserRole): Boolean
+
+  +hashPassword(password: String): String
+  +changePassword(user: User, oldPwd: String, newPwd: String): Boolean
+
+  +register(user: User, password: String): Boolean
+}
+SecurityService -- User
+
+' ================= NOTIFICATION =================
+package "Notification Service" {
+  class NotificationService {
+    +update(event: DomainEvent): void
+    +sendNotification(user: User, message: String): void
+  }
+  NotificationService ..|> Observer
+  NotificationService ..> DomainEvent
+  NotificationService --> NotificationContext
+
+  class NotificationContext {
+    -strategy: NotificationStrategy
+    +setStrategy(strategy: NotificationStrategy): void
+    +sendNotification(user: User, message: String): void
+  }
+
+  interface NotificationStrategy {
+    +send(user: User, message: String): void
+  }
+
+  class EmailNotification
+  class PushNotification
+  class InAppNotification
+
+  NotificationStrategy <|-- EmailNotification
+  NotificationStrategy <|-- PushNotification
+  NotificationStrategy <|-- InAppNotification
+  NotificationContext -- NotificationStrategy : strategy
+}
+
+' ================= CITY REQUEST =================
+package "City Requests" {
+  class CityRequest {
+    +id: UUID
+    +description: String
+    +status: RequestStatus
+    +location: String
+    +priority: Integer
+    +category: String
+    +attachments: List<MediaFile>
+
+    +setStatus(status: RequestStatus): void
+    +addReport(report: Report): void
+    +addMessage(message: Message): void
+    +assignTo(municipality: Municipality): void
+  }
+  CityRequest ..|> Subject
+
+  class Report {
+    +id: UUID
+    +description: String
+    +attachments: List<MediaFile>
+  }
+
+  CityRequest o-- Report
+  User --> CityRequest : creates
+  Municipality --> CityRequest : respondsTo
+}
+
+' ================= ALERTS =================
+package "Alerts & News" {
+  class Alert {
+    +id: UUID
+    +type: AlertType
+    +content: String
+    +timestamp: DateTime
+
+    +publish(): void
+    +deactivate(): void
+  }
+  Alert ..|> Subject
+  Municipality o-- Alert : creates
+
+  class GeneralNews {
+    +id: UUID
+    +title: String
+    +content: String
+    +timestamp: DateTime
+
+    +publish(): void
+  }
+  Municipality o-- GeneralNews : publishes
+}
+
+' ================= PROJECTS (BUILDER) =================
+package "Project Builder" {
+  interface ProjectBuilder {
+    +setTitle(title: String): ProjectBuilder
+    +setDescription(desc: String): ProjectBuilder
+    +addEvent(e: Event): ProjectBuilder
+    +build(): Project
+  }
+
+  class ConcreteProjectBuilder
+  ProjectBuilder <|-- ConcreteProjectBuilder
+}
+
+package "Projects & Events" {
+  class Project {
+    +id: UUID
+    +title: String
+    +status: ProjectStatus
+    +description: String
+    +organizer: User
+    +participants: List<User>
+
+    +addEvent(event: Event): void
+    +addParticipant(user: User): void
+    +removeEvent(event: Event): void
+    +removeParticipant(user: User): void
+  }
+
+  ConcreteProjectBuilder --> Project
+
+  class Event {
+    +id: UUID
+    +title: String
+    +startTime: DateTime
+    +endTime: DateTime
+    +location: String
+    +participants: List<User>
+
+    +addParticipant(user: User): void
+    +removeParticipant(user: User): void
+  }
+
+  class Calendar {
+    +events: List<Event>
+
+    +addEvent(event: Event): void
+    +removeEvent(event: Event): void
+    +getUpcomingEvents(): List<Event>
+    +notifyUpcomingEvents(): void
+  }
+
+  Project o-- Event
+  Project -- User : organizer/participants
+  Event -- User : participants
+  Calendar o-- Event
+}
+' ================= Crowdfunding project =================
+package "Crowdfunding Projects" {
+  class CrowdfundingProject {
+    +id: UUID
+    +title: String
+    +description: String
+    +fundingGoal: Decimal
+    +currentAmount: Decimal
+    +deadline: DateTime
+    +creator: User
+    +donations: List<Donation>
+
+    +contribute(amount: Decimal): void
+    +checkGoalReached(): Boolean
+    +close(): void
+  }
+
+  class Donation {
+    +id: UUID
+    +amount: Decimal
+    +donor: User
+    +timestamp: DateTime
+  }
+
+  CrowdfundingProject --> PaymentStatus
+  CrowdfundingProject o-- Donation
+  User --> Donation : makes
+  User --> CrowdfundingProject : creates
+}
+class PaymentService {
+  +processPayment(user: User, amount: Decimal): PaymentStatus
+}
+PaymentService --> PaymentStatus
+Donation --> PaymentService : requests to process payment
+
+' ================= COMMUNITY =================
+package "Community Module" {
+  class Community {
+    +id: UUID
+    +name: String
+    +members: List<User>
+    +description: String
+
+    +addMember(user: User): void
+    +removeMember(user: User): void
+  }
+
+  class Post {
+    +id: UUID
+    +content: String
+    +author: User
+    +createdAt: DateTime
+    +comments: List<Comment>
+    +reactions: List<Reaction>
+    +mediaFiles: List<MediaFile>
+
+    +edit(content: String): void
+    +delete(): void
+    +addMedia(file: MediaFile): void
+    +addComment(comment: Comment): void
+    +addReaction(reaction: Reaction): void
+  }
+  Post ..|> Subject
+
+  class Comment {
+    +id: UUID
+    +content: String
+    +createdAt: DateTime
+  }
+
+  class MediaFile {
+    +id: UUID
+    +url: String
+    +type: String
+  }
+
+  class Reaction {
+    +id: UUID
+    +type: ReactionType
+    +createdAt: DateTime
+  }
+}
+
+package "Reaction Commands" {
+  interface ReactionCommand {
+    - reaction: Reaction
+    - post: Post
+    +execute(): void
+    +undo(): void
+  }
+
+  class LikeCommand
+  class SupportCommand
+  class DislikeCommand
+
+  ReactionCommand <|-- LikeCommand
+  ReactionCommand <|-- SupportCommand
+  ReactionCommand <|-- DislikeCommand
+  ReactionCommand --> Reaction
+}
+
+Community o-- Post
+Community -- User : members
+Post o-- Comment
+Post o-- Reaction
+Post o-- MediaFile
+User --> Post : creates
+User --> Comment : comments
+User --> Reaction : reacts
+
+' ================= CHAT =================
+package "Chat Module" {
+  class Chat {
+    +id: UUID
+    +participants: List<User>
+    +messages: List<Message>
+
+    +sendMessage(user: User, content: String): Message
+    +getMessages(): List<Message>
+    +addParticipant(user: User): void
+    +removeParticipant(user: User): void
+  }
+
+  class Message {
+    +id: UUID
+    +content: String
+    +sender: User
+    +timestamp: DateTime
+  }
+
+  Community o-- Chat : has
+  CityRequest o-- Chat : has
+  Chat o-- Message
+  User --> Message : sends
+  Chat ..|> Subject
+}
+
+' ================= SURVEYS =================
+package "Survey Module" {
+  class Survey {
+    +id: UUID
+    +title: String
+    +description: String
+    +options: List<SurveyOption>
+
+    +addOption(option: SurveyOption): void
+  }
+  Survey ..|> Subject
+
+  class SurveyOption {
+    +id: UUID
+    +optionText: String
+    +votes: List<Vote>
+  }
+
+  class Vote {
+    +user: User
+  }
+
+  Survey o-- SurveyOption
+  SurveyOption o-- Vote
+  Vote --> User
+}
+
+Municipality --> Survey : creates
+
+' ================= OBSERVER FLOW =================
+Subject --> Observer : notify(event)
+
+' ================= ENUM USAGE =================
+User --> UserRole
+CityRequest --> RequestStatus
+Reaction --> ReactionType
+Alert --> AlertType
+Project --> ProjectStatus
+
+@enduml

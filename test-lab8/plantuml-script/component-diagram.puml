@@ -1,0 +1,25 @@
+@startuml
+title Component Diagram — Average Grade Application
+
+package "UI Layer" {
+  component "User Interface" as UI
+}
+
+package "API Layer" {
+  component "API Controller" as APIController
+}
+
+package "Business Logic Layer" {
+  component "Grade Service" as GradeService
+  component "Grade List" as GradeList
+}
+
+package "Data Layer" {
+  database "Database" as DB
+}
+
+UI --> APIController
+APIController --> GradeService
+GradeService --> GradeList
+GradeService --> DB
+@enduml

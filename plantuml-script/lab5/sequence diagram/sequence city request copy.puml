@@ -1,0 +1,65 @@
+@startuml
+title Sequence Diagram — Створення та обробка міської проблеми
+
+actor Citizen as "Громадянин"
+actor Municipality as "Муніципалітет"
+
+participant RequestForm as "RequestForm <<UI>>"
+participant SecurityService as "SecurityService"
+participant System as "Application Layer"
+participant CityRequest as "CityRequest (Model)"
+database DB as "Database"
+
+== Створення заявки ==
+
+Citizen -> RequestForm: Заповнення форми заявки\n(опис, фото/відео, локація)
+RequestForm -> SecurityService: Перевірка авторизації користувача
+
+alt Користувач не авторизований
+    SecurityService -> RequestForm: Відмова + запит на авторизацію
+    RequestForm -> Citizen: Повідомлення про необхідність входу
+else Користувач авторизований
+    SecurityService -> RequestForm: OK
+    RequestForm -> System: SubmitRequest(data)
+
+    System -> CityRequest: create(data)
+    CityRequest -> CityRequest: Валідація даних
+
+    alt Дані некоректні
+        CityRequest -> System: ValidationError
+        System -> RequestForm: Повідомлення про помилку
+        RequestForm -> Citizen: Відображення помилки
+    else Дані коректні
+        CityRequest -> DB: save(request)
+        DB --> CityRequest: OK
+
+        System -> Municipality: Сповіщення про нову заявку
+        System -> Citizen: Статус = "Нове"
+    end
+end
+
+== Обробка заявки муніципалітетом ==
+
+Municipality -> System: Прийняти заявку в роботу
+System -> DB: update status = "У роботі"
+DB --> System: OK
+System -> Citizen: Нотифікація\n"Заявка у роботі"
+
+opt Чат між громадянином і містом
+    Citizen -> System: Повідомлення в чаті
+    System -> Municipality: Передача повідомлення
+    Municipality -> System: Відповідь
+    System -> Citizen: Повідомлення
+end
+
+== Завершення заявки ==
+
+Municipality -> System: Надіслати звіт\n(опис + фото)
+System -> DB: save report
+System -> DB: update status = "Виконано"
+DB --> System: OK
+
+System -> Citizen: Нотифікація\n"Заявку виконано"
+Citizen -> System: Перегляд звіту
+
+@enduml

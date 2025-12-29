@@ -1,0 +1,42 @@
+@startuml
+title UML Communication Diagram — Обробка міської заявки
+
+left to right direction
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam nodesep 90
+skinparam ranksep 100
+
+package "Користувачі" {
+    class Citizen
+    class Municipality
+}
+
+package "Application Core" {
+    class ApplicationLayer
+}
+
+package "Domain Model" {
+    class CityRequest
+}
+
+package "Infrastructure Services" {
+    class ValidationService
+    class ChatService
+}
+
+' ===== COMMUNICATION (METHOD-STYLE) =====
+Citizen --> ApplicationLayer : authenticateUser / createCityRequest / updateCityRequest
+
+ApplicationLayer --> ValidationService : validateRequestData
+
+ApplicationLayer --> CityRequest : createRequest / updateStatus / saveRequest
+
+ApplicationLayer --> Municipality : assignRequest
+Municipality --> ApplicationLayer : submitReport
+
+ApplicationLayer --> ChatService : createMessage
+ChatService --> Citizen : deliverMessage
+ChatService --> Municipality : deliverMessage
+
+@enduml

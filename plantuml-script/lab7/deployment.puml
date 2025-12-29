@@ -1,0 +1,93 @@
+@startuml
+title UML Deployment Diagram — Civic Digital Engagement Ecosystem
+
+skinparam nodeStyle rectangle
+
+' ================= CLIENT =================
+node "Client Device" {
+  component "Web Browser"
+}
+
+' ================= FRONTEND =================
+node "Frontend Server" {
+  component "Web Application\n(Next.js UI)"
+}
+
+' ================= BACKEND =================
+node "Backend Server" {
+
+  component "API Gateway"
+  component "WebSocket Gateway"
+
+  component "Auth & Identity Service"
+  component "User Management Service"
+
+  component "City Requests Service"
+  component "Alerts & News Service"
+  component "Survey Service"
+
+  component "Crowdfunding Service"
+  component "Payment Service"
+
+  component "Projects & Events Service"
+  component "Community Service"
+  component "Chat Service"
+  component "Notification Service"
+}
+
+' ================= DATA =================
+node "Database Server" {
+  database "PostgreSQL"
+}
+
+node "Cache & Queue Server" {
+  component "Redis Cache"
+  component "Message Queue"
+}
+
+' ================= EXTERNAL =================
+node "External Services" {
+  component "Payment Gateway"
+  component "Maps API"
+  component "Email / Push Provider"
+  component "External Identity Provider"
+}
+
+' ================= CONNECTIONS =================
+"Web Browser" --> "Web Application\n(Next.js UI)"
+
+"Web Application\n(Next.js UI)" --> "API Gateway"
+"Web Application\n(Next.js UI)" --> "WebSocket Gateway"
+
+"API Gateway" --> "Auth & Identity Service"
+"API Gateway" --> "User Management Service"
+"API Gateway" --> "City Requests Service"
+"API Gateway" --> "Alerts & News Service"
+"API Gateway" --> "Survey Service"
+"API Gateway" --> "Crowdfunding Service"
+"API Gateway" --> "Projects & Events Service"
+"API Gateway" --> "Community Service"
+
+"WebSocket Gateway" --> "Chat Service"
+
+"Auth & Identity Service" --> "PostgreSQL"
+"User Management Service" --> "PostgreSQL"
+"City Requests Service" --> "PostgreSQL"
+"Community Service" --> "PostgreSQL"
+"Survey Service" --> "PostgreSQL"
+"Crowdfunding Service" --> "PostgreSQL"
+"Chat Service" --> "PostgreSQL"
+
+"Auth & Identity Service" --> "Redis Cache"
+"City Requests Service" --> "Redis Cache"
+"Survey Service" --> "Redis Cache"
+
+"Notification Service" --> "Message Queue"
+"Message Queue" --> "Notification Service"
+
+"Payment Service" --> "Payment Gateway"
+"City Requests Service" --> "Maps API"
+"Auth & Identity Service" --> "External Identity Provider"
+"Notification Service" --> "Email / Push Provider"
+
+@enduml

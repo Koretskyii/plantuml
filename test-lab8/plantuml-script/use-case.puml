@@ -1,0 +1,14 @@
+@startuml
+title Use Case Diagram — Average Grade Calculation
+
+actor User
+
+rectangle "Average Grade System" {
+  User --> (Add grade)
+  User --> (View grade list)
+  User --> (Calculate average grade)
+  User --> (Clear grade list)
+
+  (Calculate average grade) .> (View grade list) : <<include>>
+}
+@enduml

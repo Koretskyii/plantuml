@@ -1,0 +1,63 @@
+@startuml
+title Sequence Diagram — Проєкти / Волонтерство
+
+actor Organizer as "Організатор"
+actor Citizen as "Громадянин"
+
+participant ProjectForm as "UI: ProjectForm"
+participant SecurityService as "SecurityService"
+participant App as "Application Layer"
+participant Project as "Project (Model)"
+participant EventCalendar as "EventCalendar (UI/Service)"
+participant NotificationService as "NotificationService"
+database DB as "Database"
+
+== Створення проєкту ==
+
+Organizer -> ProjectForm: Заповнення форми проєкту\n(опис, завдання, дати)
+ProjectForm -> SecurityService: Перевірка авторизації
+
+alt Користувач не авторизований
+    SecurityService -> ProjectForm: Access denied
+    ProjectForm -> Organizer: Запит на авторизацію
+else Користувач авторизований
+    SecurityService -> ProjectForm: OK
+    ProjectForm -> App: CreateProject(data)
+
+    App -> Project: create(data)
+    Project -> Project: Валідація даних
+
+    alt Дані некоректні
+        Project -> App: ValidationError
+        App -> ProjectForm: Повідомлення про помилку
+        ProjectForm -> Organizer: Відображення помилки
+    else Дані коректні
+        Project -> DB: save(project)
+        DB --> Project: OK
+        App -> Organizer: Проєкт створено
+    end
+end
+
+== Долучення до проєкту ==
+
+Citizen -> ProjectForm: Перегляд доступних проєктів
+Citizen -> App: JoinProject(projectId)
+App -> SecurityService: Перевірка авторизації
+SecurityService -> App: OK
+
+App -> Project: addParticipant(Citizen)
+Project -> DB: save participant
+DB --> Project: OK
+
+App -> EventCalendar: AddEvent(participant, projectDates)
+App -> NotificationService: NotifyParticipantJoin
+NotificationService -> Citizen: Сповіщення про приєднання
+
+== Взаємодія та відгуки ==
+
+Citizen -> App: SubmitFeedback(projectId, feedback)
+App -> Project: saveFeedback(Citizen, feedback)
+Project -> DB: save feedback
+DB --> Project: OK
+App -> Organizer: Нотифікація про новий відгук
+@enduml

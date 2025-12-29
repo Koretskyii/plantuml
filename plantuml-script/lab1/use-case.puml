@@ -1,0 +1,154 @@
+@startuml
+title Діаграма варіантів використання — Цифрова екосистема громадської участі
+left to right direction
+skinparam actorStyle stick
+
+rectangle "Цифрова екосистема громадської участі" {
+    package "Взаємодія громадян і міста" {
+        usecase "Створення запиту про міську проблему" as UC_Report
+        usecase "Відстеження статусу запиту" as UC_Status
+        usecase "Чат з муніципалітетом щодо запиту" as UC_RequestChat
+        usecase "Публікація звіту про виконані роботи" as UC_WorkReport
+        usecase "Відстеження технічних оголошень" as UC_Alerts
+        usecase "Перегляд новин муніципалітету" as UC_News
+        usecase "Створення краудфандингового проєкту" as UC_CreateFund
+        usecase "Пожертва на проєкт" as UC_Donate
+        usecase "Перегляд звітів краудфандингу" as UC_FundReport
+        usecase "Перегляд опитувань та голосувань" as UC_ViewPolls
+        usecase "Участь у голосуванні" as UC_Vote
+        usecase "Перегляд результатів голосування" as UC_Results
+
+        UC_Report ..> UC_Status : <<include>>
+        UC_Report ..> UC_WorkReport : <<include>>
+        UC_Report <.. UC_RequestChat : <<extend>>
+        UC_CreateFund ..> UC_Donate : <<include>>
+        UC_CreateFund <.. UC_FundReport : <<extend>>
+        UC_ViewPolls <.. UC_Vote : <<extend>>
+        UC_Vote ..> UC_Results : <<include>>
+    }
+
+    package "Розвиток громадської активності" {
+        usecase "Створення проєкту / ініціативи" as UC_CreateProject
+        usecase "Управління проєктом" as UC_ManageProject
+        usecase "Приєднання до проєкту" as UC_JoinProject
+        usecase "Участь у проєкті" as UC_ParticipateProject
+        usecase "Перегляд інструкцій проєкту" as UC_Instructions
+        usecase "Постановка запитань (Q&A)" as UC_QA
+        usecase "Залишення зворотного зв’язку" as UC_Feedback
+        usecase "Перегляд календаря подій" as UC_ViewCalendar
+
+        UC_CreateProject ..> UC_ManageProject : <<include>>
+        UC_CreateProject <.. UC_JoinProject : <<extend>>
+        UC_JoinProject ..> UC_ParticipateProject : <<include>>
+        UC_JoinProject <.. UC_Instructions : <<extend>>
+        UC_JoinProject <.. UC_QA : <<extend>>
+        UC_JoinProject <.. UC_Feedback : <<extend>>
+
+    }
+
+    usecase "Відправка сповіщення адресатам" as UC_Notifications
+
+    package "Спільноти" {
+        usecase "Створення спільноти" as UC_CreateCommunity
+        usecase "Приєднання до спільноти" as UC_JoinCommunity
+        usecase "Публікація дописів у спільноті" as UC_Post
+        usecase "Коментування дописів" as UC_Comment
+        usecase "Реагування на дописи" as UC_React
+        usecase "Взаємодія у груповому чаті спільноти" as UC_GroupChat
+
+        UC_CreateCommunity ..> UC_JoinCommunity : <<include>>
+        UC_JoinCommunity <.. UC_GroupChat : <<extend>>
+        UC_JoinCommunity <.. UC_Post : <<extend>>
+        UC_Post <.. UC_Comment : <<extend>>
+        UC_Post <.. UC_React : <<extend>>
+    }
+
+    package "Ідентичність і довідка" {
+        usecase "Перегляд концепції проєкту" as UC_Concept
+        usecase "Ознайомлення з довідником / FAQ" as UC_Guide
+    }
+
+    package "Безпека та доступ" {
+        usecase "Реєстрація облікового запису" as UC_Register
+        usecase "Авторизація в системі" as UC_Authorization
+        usecase "Підтвердження облікового запису" as UC_Verify
+        usecase "Управління ролями користувачів" as UC_Roles
+    }
+
+    package "Аналітика" {
+        usecase "Перегляд аналітики запитів" as UC_AnalyticsRequests
+        usecase "Перегляд аналітики краудфандингу" as UC_AnalyticsFunds
+        usecase "Перегляд аналітики подій" as UC_AnalyticsEvents
+        usecase "Аналіз ефективності муніципалітету" as UC_AnalyticsPerformance
+    }
+
+    ' ================= ACTORS LEFT =================
+    actor User as "Користувач"
+    actor Citizen as "Громадянин"
+    actor Organizer as "Організатор"
+    actor Admin as "Адміністратор"
+
+    ' ================= ACTORS RIGHT =================
+    actor Municipality as "Муніципалітет"
+    actor "Payment service" as PaymentSystem
+    actor "Notification Service" as NotificationService
+
+    ' ================= RELATIONS =================
+    Citizen --> User
+    Organizer --> User
+    Admin --> User
+    Municipality --> User
+
+    User -- UC_Concept
+    User -- UC_Guide
+    User -- UC_Register
+    User -- UC_Authorization
+    User -- UC_Verify
+
+    Citizen -- UC_Report
+    Citizen -- UC_Status
+    Citizen -- UC_RequestChat
+    Citizen -- UC_ViewPolls
+    Citizen -- UC_Vote
+    Citizen -- UC_Results
+    Citizen -- UC_Donate
+    Citizen -- UC_FundReport
+    Citizen -- UC_JoinProject
+    Citizen -- UC_Instructions
+    Citizen -- UC_QA
+    Citizen -- UC_Feedback
+    Citizen -- UC_ViewCalendar
+    Citizen -- UC_JoinCommunity
+    Citizen -- UC_Post
+    Citizen -- UC_Comment
+    Citizen -- UC_React
+    Citizen -- UC_GroupChat
+    Citizen -- UC_CreateCommunity
+
+    Organizer -- UC_CreateProject
+    Organizer -- UC_ManageProject
+    Organizer -- UC_ViewCalendar
+    Organizer -- UC_CreateFund
+    Organizer -- UC_FundReport
+    Organizer -- UC_AnalyticsEvents
+    Organizer -- UC_AnalyticsFunds
+
+    Admin -- UC_Roles
+    Admin -- UC_AnalyticsFunds
+    Admin -- UC_AnalyticsEvents
+
+    UC_WorkReport -- Municipality
+    UC_Alerts -- Municipality
+    UC_News -- Municipality
+    UC_ViewPolls -- Municipality
+    UC_Results -- Municipality
+    UC_AnalyticsRequests -- Municipality
+    UC_AnalyticsPerformance -- Municipality
+
+    UC_Donate -- PaymentSystem
+
+    UC_Alerts -- NotificationService
+    UC_Notifications -- NotificationService
+    UC_Status -- NotificationService
+}
+@enduml

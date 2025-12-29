@@ -1,0 +1,58 @@
+@startuml
+title Sequence Diagram — Краудфандинг: створення проєкту та донат
+
+actor Organizer as "Організатор"
+actor Citizen as "Громадянин"
+actor PaymentSystem as "Платіжний сервіс"
+
+participant FundForm as "UI: FundProjectForm"
+participant SecurityService as "SecurityService"
+participant App as "Application Layer"
+participant FundProject as "FundProject (Model)"
+database DB as "Database"
+
+== Створення краудфандинг-проєкту ==
+
+Organizer -> FundForm: Заповнення форми проєкту\n(опис, ціль, терміни)
+FundForm -> SecurityService: Перевірка авторизації
+
+alt Не авторизований
+    SecurityService -> FundForm: Відмова
+    FundForm -> Organizer: Запит на авторизацію
+else Авторизований
+    SecurityService -> FundForm: OK
+    FundForm -> App: CreateFundProject(data)
+
+    App -> FundProject: create(data)
+    FundProject -> FundProject: Валідація даних
+
+    alt Дані некоректні
+        FundProject -> App: ValidationError
+        App -> FundForm: Повідомлення про помилку
+        FundForm -> Organizer: Відображення помилки
+    else Дані коректні
+        FundProject -> DB: save(project)
+        DB --> FundProject: OK
+        App -> Organizer: Проєкт опубліковано
+    end
+end
+
+== Пожертва на проєкт ==
+
+Citizen -> App: Перегляд проєкту
+Citizen -> App: Ініціація пожертви (сума)
+
+App -> PaymentSystem: Створення платежу
+PaymentSystem -> Citizen: Платіжна форма
+
+alt Платіж успішний
+    PaymentSystem -> App: PaymentConfirmed
+    App -> DB: save donation
+    App -> DB: update collectedAmount
+    App -> Citizen: Підтвердження пожертви
+    App -> Organizer: Нотифікація про новий донат
+else Платіж неуспішний
+    PaymentSystem -> App: PaymentFailed
+    App -> Citizen: Повідомлення про помилку
+end
+@enduml

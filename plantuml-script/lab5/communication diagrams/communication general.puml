@@ -1,0 +1,60 @@
+@startuml
+title UML Communication Diagram — Загальна взаємодія цифрової екосистеми
+
+left to right direction
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam nodesep 90
+skinparam ranksep 100
+
+package "Користувачі" {
+    class Citizen
+    class Organizer
+    class Municipality
+    class Admin
+}
+
+package "Application Core" {
+    class ApplicationLayer
+}
+
+package "Domain Model" {
+    class CityRequest
+    class Project
+    class CrowdfundingProject
+    class Community
+    class Poll
+}
+
+package "Infrastructure Services" {
+    class ChatService
+    class PaymentService
+}
+
+' ===== COMMUNICATION (METHOD-STYLE) =====
+Citizen --> ApplicationLayer : requestCityProblem, joinCommunity, voteInPoll
+
+Organizer --> ApplicationLayer : createProject, manageProject
+
+Municipality --> ApplicationLayer : reviewCityRequest, publishDecision
+
+Admin --> ApplicationLayer : manageUsers
+
+ApplicationLayer --> CityRequest : createRequest, updateStatus
+
+ApplicationLayer --> Project : createProject, updateProject
+
+ApplicationLayer --> CrowdfundingProject : createCrowdfunding, processDonation
+
+ApplicationLayer --> Community : createCommunity, addMember
+
+ApplicationLayer --> Poll : createPoll, recordVote
+
+ApplicationLayer --> ChatService : createMessage, getMessages
+
+ApplicationLayer --> PaymentService : createPayment, confirmPayment
+
+ChatService --> Citizen : deliverMessage
+ChatService --> Municipality : deliverMessage
+
+@enduml

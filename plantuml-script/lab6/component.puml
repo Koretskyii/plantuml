@@ -1,0 +1,110 @@
+@startuml
+title UML Component Diagram — Civic Digital Engagement Ecosystem
+
+skinparam componentStyle rectangle
+
+' ================= UI =================
+package "User Interface (Web Browser)" {
+
+  component "Web Application\n(Next.js UI)" as WebApp
+
+  component "City Request View\n(City Problems)" as RequestView
+  component "Crowdfunding View" as CrowdfundingView
+  component "Projects & Events View" as ProjectView
+  component "Community View" as CommunityView
+  component "Survey & Voting View" as SurveyView
+  component "Chat View" as ChatView
+  component "Shared UI Components\n(Forms, Validation, Navigation)" as SharedUI
+}
+
+WebApp o-- RequestView
+WebApp o-- CrowdfundingView
+WebApp o-- ProjectView
+WebApp o-- CommunityView
+WebApp o-- SurveyView
+WebApp o-- ChatView
+WebApp o-- SharedUI
+
+' ================= NETWORK =================
+package "Networking Layer" {
+  component "REST API Gateway" as APIGateway
+  component "WebSocket Gateway" as WSGateway
+}
+
+WebApp --> APIGateway
+ChatView --> WSGateway
+
+' ================= BACKEND =================
+package "Business Logic & Services (NestJS)" {
+
+  component "Auth & Identity Service\n(JWT, Roles)" as AuthService
+  component "User Management Service" as UserService
+
+  component "City Requests Service" as CityRequestService
+  component "Alerts & News Service" as AlertService
+  component "Survey Service" as SurveyService
+
+  component "Crowdfunding Service" as CrowdfundingService
+  component "Payment Service" as PaymentService
+
+  component "Projects & Events Service" as ProjectService
+  component "Community Service" as CommunityService
+
+  component "Chat Service" as ChatService
+  component "Notification Service" as NotificationService
+}
+
+' ================= API -> SERVICES =================
+APIGateway --> AuthService
+APIGateway --> UserService
+APIGateway --> CityRequestService
+APIGateway --> AlertService
+APIGateway --> SurveyService
+APIGateway --> CrowdfundingService
+APIGateway --> ProjectService
+APIGateway --> CommunityService
+
+WSGateway --> ChatService
+
+' ================= INTERNAL BACKEND =================
+AuthService --> UserService
+
+CityRequestService --> NotificationService
+AlertService --> NotificationService
+ProjectService --> NotificationService
+SurveyService --> NotificationService
+
+CrowdfundingService --> PaymentService
+
+' ================= DATA =================
+package "Data & Storage" {
+  database "PostgreSQL" as DB
+  component "Redis Cache\n(Sessions, Caching)" as Redis
+}
+
+UserService --> DB
+CityRequestService --> DB
+ProjectService --> DB
+CommunityService --> DB
+SurveyService --> DB
+ChatService --> DB
+CrowdfundingService --> DB
+
+AuthService --> Redis
+CityRequestService --> Redis
+SurveyService --> Redis
+
+' ================= EXTERNAL SERVICES =================
+package "External Services" {
+  component "Payment Gateway" as PaymentGateway
+  component "Maps API" as MapsAPI
+  component "Email / Push Provider" as MessagingProvider
+  component "Auth0 / BankID" as ExternalAuth
+}
+
+PaymentService --> PaymentGateway
+CityRequestService --> MapsAPI
+AuthService --> ExternalAuth
+NotificationService --> MessagingProvider
+
+@enduml

@@ -1,0 +1,54 @@
+@startuml
+title Sequence Diagram — Опитування / Голосування
+
+actor Citizen as "Громадянин"
+actor Municipality as "Муніципалітет"
+
+participant PollForm as "UI: PollForm"
+participant SecurityService as "SecurityService"
+participant App as "Application Layer"
+participant Poll as "Poll (Model)"
+database DB as "Database"
+participant NotificationService as "NotificationService"
+
+== Публікація опитування ==
+
+Municipality -> PollForm: Створення нового опитування\n(питання, варіанти, терміни)
+PollForm -> SecurityService: Перевірка авторизації
+SecurityService -> PollForm: OK
+
+PollForm -> App: CreatePoll(data)
+App -> Poll: create(data)
+Poll -> DB: save(poll)
+DB --> Poll: OK
+App -> Municipality: Підтвердження публікації
+
+== Голосування громадянина ==
+
+Citizen -> PollForm: Перегляд доступних опитувань
+Citizen -> PollForm: Вибір варіанту та голосування
+PollForm -> SecurityService: Перевірка авторизації
+SecurityService -> PollForm: OK
+
+PollForm -> App: SubmitVote(pollId, choice, citizenId)
+App -> Poll: validateVote(Citizen)
+alt Громадянин вже голосував
+    Poll -> App: VoteRejected
+    App -> PollForm: Повідомлення про помилку
+    PollForm -> Citizen: Інформація: Ви вже голосували
+else Голос прийнятий
+    Poll -> DB: saveVote(citizenId, choice)
+    DB --> Poll: OK
+    App -> Citizen: Підтвердження голосу
+end
+
+== Публікація результатів ==
+
+App -> Poll: calculateResults()
+Poll -> DB: fetchVotes()
+DB --> Poll: votes
+App -> NotificationService: NotifyResults
+NotificationService -> Citizen: Оновлення результатів опитування
+App -> Municipality: Підтвердження публікації результатів
+
+@enduml

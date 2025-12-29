@@ -1,0 +1,28 @@
+@startuml
+title Class Diagram — Average Grade System
+skinparam classAttributeIconSize 0
+
+class Grade {
+  - value: double
+}
+
+class GradeList {
+  - grades: List<Grade>
+  + addGrade(value: double): void
+  + getAverage(): double
+  + clear(): void
+}
+
+class GradeService {
+  + calculateAverage(grades: List<Grade>): double
+}
+
+class UserInterface {
+  + inputGrade(): double
+  + showAverage(value: double): void
+}
+
+GradeList *-- Grade
+GradeList --> GradeService
+UserInterface --> GradeList
+@enduml

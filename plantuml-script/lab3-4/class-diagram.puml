@@ -1,0 +1,246 @@
+@startuml
+title UML Class Diagram — Digital Civic Engagement Ecosystem
+skinparam classAttributeIconSize 0
+
+' ================= ENUMS =================
+enum UserRole {
+  Citizen
+  Municipality
+  Organizer
+  Admin
+}
+
+enum RequestStatus {
+  New
+  InProgress
+  Completed
+}
+
+enum ProjectStatus {
+  Draft
+  Active
+  Finished
+}
+
+enum PaymentStatus {
+  Pending
+  Completed
+  Failed
+}
+
+class ReactionType {
+  Like
+  Support
+  Dislike
+}
+
+' ================= IDENTITY & SECURITY =================
+class User {
+  +id: UUID
+  +email: String
+  +passwordHash: String
+  +isVerified: Boolean
+}
+
+User --> UserRole : role
+
+class IdentityProfile {
+  +userId: UUID
+  +fullName: String
+  +avatarUrl: String
+}
+
+class SecurityService {
+  +authenticate()
+  +authorize()
+  +verifyAccount()
+}
+
+User "1" -- "1" IdentityProfile
+SecurityService --> User
+
+' ================= NOTIFICATIONS =================
+class Notification {
+  +id: UUID
+  +title: String
+  +message: String
+  +createdAt: DateTime
+  +isRead: Boolean
+}
+
+User "1" -- "*" Notification
+
+' ================= PEOPLE ↔ CITY =================
+class CityRequest {
+  +id: UUID
+  +title: String
+  +description: String
+  +location: String
+  +createdAt: DateTime
+}
+
+CityRequest --> RequestStatus : status
+
+class MediaFile {
+  +id: UUID
+  +url: String
+  +type: String
+}
+
+class RequestMessage {
+  +id: UUID
+  +message: String
+  +timestamp: DateTime
+}
+
+class Report {
+  +id: UUID
+  +description: String
+  +createdAt: DateTime
+}
+
+User "1" -- "*" CityRequest : creates
+CityRequest "1" o-- "*" MediaFile
+CityRequest "1" o-- "*" RequestMessage
+CityRequest "1" o-- "0..1" Report
+RequestMessage "*" --> "1" User : author
+
+' ================= ALERTS & NEWS =================
+class CityAlert {
+  +id: UUID
+  +title: String
+  +content: String
+  +createdAt: DateTime
+}
+
+class CityNews {
+  +id: UUID
+  +title: String
+  +content: String
+  +publishedAt: DateTime
+}
+
+User "1" -- "*" CityAlert : publishes
+User "1" -- "*" CityNews : publishes
+
+' ================= CROWDFUNDING =================
+class CrowdfundingProject {
+  +id: UUID
+  +title: String
+  +goalAmount: Decimal
+  +currentAmount: Decimal
+}
+
+class Donation {
+  +id: UUID
+  +amount: Decimal
+  +createdAt: DateTime
+}
+
+Donation --> PaymentStatus : status
+
+class CrowdfundingReport {
+  +id: UUID
+  +summary: String
+  +createdAt: DateTime
+}
+
+CrowdfundingProject "1" o-- "*" Donation
+CrowdfundingProject "1" o-- "*" CrowdfundingReport
+User "1" -- "*" CrowdfundingProject
+User "1" -- "*" Donation : makes
+
+' ================= SURVEYS =================
+class Survey {
+  +id: UUID
+  +question: String
+  +isActive: Boolean
+}
+
+class SurveyOption {
+  +id: UUID
+  +text: String
+}
+
+class Vote {
+  +id: UUID
+  +createdAt: DateTime
+}
+
+Survey "1" o-- "*" SurveyOption
+SurveyOption "1" o-- "*" Vote
+User "1" -- "*" Vote
+
+' ================= GROWTH =================
+class Project {
+  +id: UUID
+  +title: String
+  +description: String
+}
+
+Project --> ProjectStatus : status
+
+class Event {
+  +id: UUID
+  +title: String
+  +eventDate: DateTime
+}
+
+class EventCalendar {
+  +id: UUID
+  +externalSync: Boolean
+}
+
+User "1" -- "*" Project : organizes
+Project "1" o-- "*" Event
+Event "*" -- "1" EventCalendar
+User "*" -- "*" Project : participates
+
+' ================= COMMUNITY =================
+class Community {
+  +id: UUID
+  +name: String
+  +description: String
+}
+
+class Post {
+  +id: UUID
+  +content: String
+  +createdAt: DateTime
+}
+
+class Comment {
+  +id: UUID
+  +content: String
+  +createdAt: DateTime
+}
+
+class Reaction {
+  +id: UUID
+}
+
+Reaction --> ReactionType : type
+
+Community "1" o-- "*" Post
+Post "1" o-- "*" Comment
+Post "1" o-- "*" Reaction
+User "1" -- "*" Post
+User "1" -- "*" Comment
+User "1" -- "*" Reaction
+User "*" -- "*" Community
+
+' ================= COMMUNICATION =================
+class Chat {
+  +id: UUID
+  +createdAt: DateTime
+}
+
+class Message {
+  +id: UUID
+  +content: String
+  +timestamp: DateTime
+}
+
+Chat "1" o-- "*" Message
+User "*" -- "*" Chat
+@enduml
